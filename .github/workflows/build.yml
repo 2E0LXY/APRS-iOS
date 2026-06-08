@@ -1,0 +1,73 @@
+name: Build APRS Net iOS
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate --spec project.yml
+
+      - name: Build for iOS Simulator
+        run: |
+          xcodebuild \
+            -project APRSNet.xcodeproj \
+            -scheme APRSNet \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+  release:
+    needs: build
+    runs-on: macos-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate --spec project.yml
+
+      - name: Build and package
+        run: |
+          xcodebuild \
+            -project APRSNet.xcodeproj \
+            -scheme APRSNet \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            -derivedDataPath DerivedData \
+            build
+          APP=$(find DerivedData -name "APRSNet.app" -type d | head -1)
+          if [ -n "$APP" ]; then
+            cp -r "$APP" APRSNet.app
+            zip -r APRSNet-iOS-Simulator.zip APRSNet.app
+          fi
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: APRSNet-iOS-Simulator.zip
+          body: |
+            ## APRS Net iOS
+            Simulator build. Sign with your Apple Developer certificate for device installation.
+          generate_release_notes: true
