@@ -36,6 +36,7 @@ final class AprsViewModel {
         locMgr.delegate = locHelper
         locMgr.desiredAccuracy = kCLLocationAccuracyBest
 
+        ws.onStateChange = { [weak self] state in self?.connState = state }
         ws.onPosition = { [weak self] json in self?.handlePositionJson(json) }
         ws.onPacket   = { [weak self] raw  in self?.handleRawPacket(raw)   }
     }
