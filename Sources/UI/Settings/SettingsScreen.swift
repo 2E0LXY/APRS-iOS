@@ -150,7 +150,7 @@ struct AisSection: View {
             }
             if saved {
                 Text(key.isEmpty ? "Direct AIS disabled" : "Connecting to aisstream.io…")
-                    .font(.caption).foregroundStyle(key.isEmpty ? .secondary : .green)
+                    .font(.caption).foregroundStyle(key.isEmpty ? Color.gray : Color.green)
             }
         } header: {
             Text("AIS / Ships (direct)")
