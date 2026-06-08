@@ -10,15 +10,6 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - path: Sources
-    info:
-      properties:
-        CFBundleDisplayName: APRS Net
-        NSLocationWhenInUseUsageDescription: "Location is used for GPS position beaconing and finding nearby stations."
-        NSLocationAlwaysAndWhenInUseUsageDescription: "Background location allows continuous APRS beaconing."
-        UIBackgroundModes:
-          - location
-          - fetch
-        UILaunchScreen: {}
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: uk.aprsnet.ios
@@ -31,6 +22,11 @@ targets:
         CODE_SIGNING_ALLOWED: "NO"
         TARGETED_DEVICE_FAMILY: "1,2"
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        GENERATE_INFOPLIST_FILE: "YES"
+        INFOPLIST_KEY_CFBundleDisplayName: "APRS Net"
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Location is used for GPS position beaconing and finding nearby APRS stations."
+        INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription: "Background location allows continuous APRS beaconing."
+        INFOPLIST_KEY_UIBackgroundModes: "location fetch"
 schemes:
   APRSNet:
     build:
