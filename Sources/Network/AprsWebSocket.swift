@@ -1,18 +1,16 @@
 import Foundation
-import Observation
 
-@Observable
 final class AprsWebSocket: NSObject {
 
     enum ConnState { case disconnected, connecting, connected, authed }
-    var connState: ConnState = .disconnected
 
-    var onPosition: ((String) -> Void)?
-    var onPacket:   ((String) -> Void)?
+    /// Called on main thread whenever connection state changes.
+    var onStateChange: ((ConnState) -> Void)?
+    var onPosition:    ((String) -> Void)?
+    var onPacket:      ((String) -> Void)?
 
-    private var task:     URLSessionWebSocketTask?
-    private lazy var session = URLSession(
-        configuration: .default, delegate: self, delegateQueue: nil)
+    private var session:   URLSession!
+    private var task:      URLSessionWebSocketTask?
     private var callsign   = ""
     private var passcode   = ""
     private var shouldRun  = false
@@ -20,10 +18,17 @@ final class AprsWebSocket: NSObject {
 
     static let wsURL = URL(string: "wss://www.aprsnet.uk/ws")!
 
+    override init() {
+        super.init()
+        session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
+    }
+
     func setCredentials(callsign: String, passcode: String) {
         self.callsign = callsign.trimmingCharacters(in: .whitespaces).uppercased()
         self.passcode = passcode.trimmingCharacters(in: .whitespaces)
-        if connState == .connected || connState == .authed { sendAuth() }
+        // Re-auth if already connected
+        let isUp = task?.state == .running
+        if isUp { sendAuth() }
     }
 
     func connect() {
@@ -35,14 +40,7 @@ final class AprsWebSocket: NSObject {
         shouldRun = false
         task?.cancel(with: .normalClosure, reason: nil)
         task = nil
-        DispatchQueue.main.async { self.connState = .disconnected }
-    }
-
-    private func openSocket() {
-        DispatchQueue.main.async { self.connState = .connecting }
-        task = session.webSocketTask(with: Self.wsURL)
-        task?.resume()
-        receive()
+        notify(.disconnected)
     }
 
     func sendRaw(_ json: String) {
@@ -50,11 +48,19 @@ final class AprsWebSocket: NSObject {
     }
 
     func transmit(_ packet: String) {
-        guard connState == .authed else { return }
-        let escaped = packet
+        let esc = packet
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "\"",  with: "\\\"")
-        sendRaw("{\"type\":\"tx\",\"packet\":\"\(escaped)\"}")
+        sendRaw("{\"type\":\"tx\",\"packet\":\"\(esc)\"}")
+    }
+
+    // ─ Private ───────────────────────────────────────────────────────────────
+
+    private func openSocket() {
+        notify(.connecting)
+        task = session.webSocketTask(with: Self.wsURL)
+        task?.resume()
+        receive()
     }
 
     private func sendAuth() {
@@ -85,24 +91,20 @@ final class AprsWebSocket: NSObject {
         switch json["type"] as? String {
         case "auth_ack", "authok", "logresp":
             if (json["status"] as? String) != "error" {
-                DispatchQueue.main.async { self.connState = .authed }
+                notify(.authed)
             }
         case "rx", "obj":
-            if let packet = json["packet"] as? String, !packet.isEmpty {
-                onPacket?(packet)
-            }
+            if let pkt = json["packet"] as? String, !pkt.isEmpty { onPacket?(pkt) }
             if let dataObj = json["data"],
-               let dataBytes = try? JSONSerialization.data(withJSONObject: dataObj),
-               let str = String(data: dataBytes, encoding: .utf8) {
-                onPosition?(str)
-            }
+               let bytes = try? JSONSerialization.data(withJSONObject: dataObj),
+               let str   = String(data: bytes, encoding: .utf8) { onPosition?(str) }
         default: break
         }
     }
 
     private func scheduleReconnect() {
         guard shouldRun else { return }
-        DispatchQueue.main.async { self.connState = .disconnected }
+        notify(.disconnected)
         retryCount += 1
         let delay = min(30.0, 1.0 * pow(1.5, Double(min(retryCount, 10))))
         DispatchQueue.global().asyncAfter(deadline: .now() + delay) { [weak self] in
@@ -110,13 +112,17 @@ final class AprsWebSocket: NSObject {
             self.openSocket()
         }
     }
+
+    private func notify(_ state: ConnState) {
+        DispatchQueue.main.async { self.onStateChange?(state) }
+    }
 }
 
 extension AprsWebSocket: URLSessionWebSocketDelegate {
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask,
                     didOpenWithProtocol protocol: String?) {
         retryCount = 0
-        DispatchQueue.main.async { self.connState = .connected }
+        notify(.connected)
         sendAuth()
     }
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask,
