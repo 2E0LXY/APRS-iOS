@@ -67,6 +67,7 @@ Native SwiftUI client for [aprsnet.uk](https://www.aprsnet.uk) — feature-parit
 - Beaconing mode and comment
 - Per-type map filters (7 toggles, persisted in UserDefaults)
 - Direct aisstream.io API key (optional)
+- **Geo-fence alerts** (v1.1.0+) — create rules to notify when a station enters or leaves a geographic area; add rules via Settings → Geo-fence Alerts; syncs with the server and other devices
 - Notification preferences
 
 ### Status
@@ -155,6 +156,7 @@ No external dependencies — `URLSessionWebSocketTask` for WebSocket, `MapKit` f
 
 | Version | Changes |
 |---------|---------|
+| v1.1.0 | Geo-fence alert rules — `GeoFenceScreen`, server CRUD API, WS alert handler → `UNUserNotificationCenter` |
 | v1.0.0 | Initial release — map, messaging, beaconing, AIS, TOCALL classification, member login, all five screens |
 
 ---
