@@ -42,6 +42,7 @@ Native SwiftUI client for [aprsnet.uk](https://www.aprsnet.uk) — feature-parit
 - **Direct connection** — optional aisstream.io API key in Settings for an independent feed; configure separately from the server key to avoid free-tier conflicts
 
 ### Messaging
+- **Direct member messaging** — when recipient is a registered aprsnet.uk member, choose `📡 APRS` or `↗ Direct` delivery at compose time; Direct bypasses APRS-IS
 - Full send/receive APRS messaging with ACK tracking
 - Conversation threads per callsign
 - Outgoing bubbles turn green on ACK confirmation
