@@ -6,6 +6,7 @@ final class AprsWebSocket: NSObject {
 
     /// Called on main thread whenever connection state changes.
     var onStateChange: ((ConnState) -> Void)?
+    var onAlert:       ((String, String, String) -> Void)?
     var onPosition:    ((String) -> Void)?
     var onPacket:      ((String) -> Void)?
 
@@ -93,6 +94,11 @@ final class AprsWebSocket: NSObject {
             if (json["status"] as? String) != "error" {
                 notify(.authed)
             }
+        case "alert":
+            let alertType = json["alert_type"] as? String ?? ""
+            let call      = json["callsign"]   as? String ?? ""
+            let msg       = json["message"]    as? String ?? ""
+            if !alertType.isEmpty { onAlert?(alertType, call, msg) }
         case "rx", "obj":
             if let pkt = json["packet"] as? String, !pkt.isEmpty { onPacket?(pkt) }
             if let dataObj = json["data"],
