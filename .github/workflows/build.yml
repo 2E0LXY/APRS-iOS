@@ -23,7 +23,7 @@ jobs:
           xcodebuild \
             -project APRSNet.xcodeproj \
             -scheme APRSNet \
-            -destination 'platform=iOS Simulator,name=Any iOS Simulator Device' \
+            -destination 'generic/platform=iOS Simulator' \
             -configuration Release \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
@@ -50,7 +50,7 @@ jobs:
           xcodebuild \
             -project APRSNet.xcodeproj \
             -scheme APRSNet \
-            -destination 'platform=iOS Simulator,name=Any iOS Simulator Device' \
+            -destination 'generic/platform=iOS Simulator' \
             -configuration Release \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
