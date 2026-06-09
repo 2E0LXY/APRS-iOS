@@ -11,6 +11,7 @@ struct SettingsScreen: View {
                 BeaconingSection(vm: vm)
                 FiltersSection(vm: vm)
                 AisSection(vm: vm)
+        GeoFenceAlertsSection(vm: vm)
                 NotificationsSection(vm: vm)
             }
             .navigationTitle("Settings")
@@ -171,6 +172,22 @@ struct NotificationsSection: View {
             Toggle("Incoming messages", isOn: $notifyMsg)
                 .onChange(of: notifyMsg) { vm.settings.notifyMessages = notifyMsg }
                 .onAppear { notifyMsg = vm.settings.notifyMessages }
+        }
+    }
+}
+
+// ─ Geo-fence alerts ───────────────────────────────────────────────────────────
+struct GeoFenceAlertsSection: View {
+    let vm: AprsViewModel
+    var body: some View {
+        if vm.settings.memberSignedIn {
+            Section {
+                NavigationLink(destination: GeoFenceScreen()) {
+                    Label("Geo-fence Alerts", systemImage: "location.circle.fill")
+                }
+            } footer: {
+                Text("Get notified when a station enters or leaves a geographic area.")
+            }
         }
     }
 }
