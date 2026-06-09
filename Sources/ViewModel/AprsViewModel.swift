@@ -1,4 +1,5 @@
 import Foundation
+import UserNotifications
 import CoreLocation
 import Observation
 
@@ -10,6 +11,7 @@ final class AprsViewModel {
     var connState:  AprsWebSocket.ConnState      = .disconnected
     var myPosition: CLLocationCoordinate2D?
     var filterTick  = 0
+    var alertRules: [AlertRule] = []
     var serverStatus: ServerStatus?
 
     let settings   = SettingsStore()
@@ -38,6 +40,7 @@ final class AprsViewModel {
 
         ws.onStateChange = { [weak self] state in self?.connState = state }
         ws.onPosition = { [weak self] json in self?.handlePositionJson(json) }
+        ws.onAlert    = { [weak self] type, call, msg in self?.handleWsAlert(type, call, msg) }
         ws.onPacket   = { [weak self] raw  in self?.handleRawPacket(raw)   }
     }
 
@@ -205,6 +208,19 @@ final class AprsViewModel {
         guard let url = URL(string: "https://www.aprsnet.uk/api/status") else { return }
         guard let (data, _) = try? await URLSession.shared.data(from: url) else { return }
         serverStatus = try? JSONDecoder().decode(ServerStatus.self, from: data)
+    }
+
+    private func handleWsAlert(_ alertType: String, _ callsign: String, _ message: String) {
+        guard settings.notifyMessages else { return }
+        let content = UNMutableNotificationContent()
+        content.title = "\u{1F4CD} Geo-fence: \(callsign)"
+        content.body  = message
+        content.sound = .default
+        let req = UNNotificationRequest(
+            identifier: "geofence-\(callsign)-\(Date().timeIntervalSince1970)",
+            content: content, trigger: nil
+        )
+        UNUserNotificationCenter.current().add(req)
     }
 
     deinit {
