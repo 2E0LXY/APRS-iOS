@@ -59,3 +59,49 @@ private extension Character {
         return UInt8(scalar.value)
     }
 }
+
+// MARK: - Geo-fence alert rules
+
+extension AprsViewModel {
+    func loadAlertRules() async {
+        guard !settings.memberToken.isEmpty,
+              let url = URL(string: "https://www.aprsnet.uk/api/member/alert-rules")
+        else { return }
+        var req = URLRequest(url: url)
+        req.setValue(settings.memberToken, forHTTPHeaderField: "X-Member-Token")
+        guard let (data, _) = try? await URLSession.shared.data(for: req),
+              let rules = try? JSONDecoder().decode([AlertRule].self, from: data)
+        else { return }
+        await MainActor.run { alertRules = rules }
+    }
+
+    func createAlertRule(_ rule: AlertRule) async {
+        guard !settings.memberToken.isEmpty,
+              let url = URL(string: "https://www.aprsnet.uk/api/member/alert-rules"),
+              let body = try? JSONEncoder().encode(rule)
+        else { return }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json",    forHTTPHeaderField: "Content-Type")
+        req.setValue(settings.memberToken,  forHTTPHeaderField: "X-Member-Token")
+        req.httpBody = body
+        guard let (data, resp) = try? await URLSession.shared.data(for: req),
+              (resp as? HTTPURLResponse)?.statusCode == 201,
+              let created = try? JSONDecoder().decode(AlertRule.self, from: data)
+        else { return }
+        await MainActor.run { alertRules.append(created) }
+    }
+
+    func deleteAlertRule(id: Int64) async {
+        guard !settings.memberToken.isEmpty,
+              let url = URL(string: "https://www.aprsnet.uk/api/member/alert-rules/\(id)")
+        else { return }
+        var req = URLRequest(url: url)
+        req.httpMethod = "DELETE"
+        req.setValue(settings.memberToken, forHTTPHeaderField: "X-Member-Token")
+        guard let (_, resp) = try? await URLSession.shared.data(for: req),
+              (resp as? HTTPURLResponse)?.statusCode == 204
+        else { return }
+        await MainActor.run { alertRules.removeAll { $0.id == id } }
+    }
+}
