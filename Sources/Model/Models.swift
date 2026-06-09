@@ -56,3 +56,20 @@ struct APRSMessage: Identifiable, Equatable {
     var acked:     Bool
     var outgoing:  Bool
 }
+
+/// A server-side geo-fence alert rule owned by the current member.
+struct AlertRule: Identifiable, Codable, Equatable {
+    var id:            Int64  = 0
+    var type:          String = "geofence_enter"   // "geofence_enter" | "geofence_exit"
+    var watchCallsign: String = "*"
+    var lat:           Double = 0
+    var lon:           Double = 0
+    var radiusMi:      Double = 10
+    var name:          String = ""
+
+    enum CodingKeys: String, CodingKey {
+        case id, type, lat, lon, name
+        case watchCallsign = "watch_callsign"
+        case radiusMi      = "radius_mi"
+    }
+}
