@@ -1,0 +1,85 @@
+<svg width="400" height="780" xmlns="http://www.w3.org/2000/svg">
+<defs><linearGradient id="ipbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a2f50"/><stop offset="100%" stop-color="#0a1825"/></linearGradient><clipPath id="iscreen"><rect x="20" y="20" width="360" height="740" rx="40"/></clipPath></defs>
+<rect x="10" y="10" width="380" height="760" rx="46" fill="#0d1117" stroke="#30363d" stroke-width="2"/>
+<rect x="20" y="20" width="360" height="740" fill="#0f172a" rx="40"/>
+<g clip-path="url(#iscreen)">
+<rect x="20" y="20" width="360" height="740" fill="url(#ipbg)" rx="0"/>
+<line x1="40" y1="20" x2="40" y2="760" stroke="#1e3560" stroke-width="0.4" opacity="0.35"/>
+<line x1="110" y1="20" x2="110" y2="760" stroke="#1e3560" stroke-width="0.4" opacity="0.35"/>
+<line x1="180" y1="20" x2="180" y2="760" stroke="#1e3560" stroke-width="0.4" opacity="0.35"/>
+<line x1="250" y1="20" x2="250" y2="760" stroke="#1e3560" stroke-width="0.4" opacity="0.35"/>
+<line x1="320" y1="20" x2="320" y2="760" stroke="#1e3560" stroke-width="0.4" opacity="0.35"/>
+<line x1="20" y1="60" x2="380" y2="60" stroke="#1e3560" stroke-width="0.4" opacity="0.35"/>
+<line x1="20" y1="130" x2="380" y2="130" stroke="#1e3560" stroke-width="0.4" opacity="0.35"/>
+<line x1="20" y1="200" x2="380" y2="200" stroke="#1e3560" stroke-width="0.4" opacity="0.35"/>
+<line x1="20" y1="270" x2="380" y2="270" stroke="#1e3560" stroke-width="0.4" opacity="0.35"/>
+<line x1="20" y1="340" x2="380" y2="340" stroke="#1e3560" stroke-width="0.4" opacity="0.35"/>
+<line x1="20" y1="410" x2="380" y2="410" stroke="#1e3560" stroke-width="0.4" opacity="0.35"/>
+<line x1="20" y1="480" x2="380" y2="480" stroke="#1e3560" stroke-width="0.4" opacity="0.35"/>
+<line x1="20" y1="550" x2="380" y2="550" stroke="#1e3560" stroke-width="0.4" opacity="0.35"/>
+<line x1="20" y1="620" x2="380" y2="620" stroke="#1e3560" stroke-width="0.4" opacity="0.35"/>
+<line x1="20" y1="690" x2="380" y2="690" stroke="#1e3560" stroke-width="0.4" opacity="0.35"/>
+<line x1="190" y1="20" x2="190" y2="760" stroke="#263d6a" stroke-width="1.5" opacity="0.45"/>
+<line x1="20" y1="360" x2="380" y2="360" stroke="#263d6a" stroke-width="1.5" opacity="0.45"/>
+<rect x="20" y="20" width="360" height="48" fill="#0f172a" rx="0" opacity="0.9"/>
+<rect x="140" y="24" width="120" height="28" fill="#000" rx="14"/>
+<text x="70" y="46" fill="#e2e8f0" font-size="13" font-family="'Segoe UI',Arial,sans-serif" text-anchor="start" font-weight="bold">9:41</text>
+<text x="340" y="46" fill="#e2e8f0" font-size="11" font-family="'Segoe UI',Arial,sans-serif" text-anchor="end" font-weight="normal">100%</text>
+<rect x="20" y="68" width="360" height="44" fill="#0f172a" rx="0" opacity="0.92"/>
+<text x="200" y="97" fill="#e2e8f0" font-size="17" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="600">Map</text>
+<rect x="280" y="76" width="80" height="28" fill="#1e293b" rx="14"/>
+<text x="320" y="94" fill="#94a3b8" font-size="10" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">412 stations</text>
+<circle cx="110" cy="200" r="10" fill="#3b82f6" opacity="0.9" stroke="white" stroke-width="1"/>
+<text x="110" y="204" fill="white" font-size="7" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">●</text>
+<circle cx="255" cy="165" r="10" fill="#a855f7" opacity="0.9" stroke="white" stroke-width="1"/>
+<text x="255" y="169" fill="white" font-size="7" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">●</text>
+<circle cx="300" cy="290" r="10" fill="#22c55e" opacity="0.9" stroke="white" stroke-width="1"/>
+<text x="300" y="294" fill="white" font-size="7" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">●</text>
+<circle cx="155" cy="390" r="10" fill="#14b8a6" opacity="0.9" stroke="white" stroke-width="1"/>
+<text x="155" y="394" fill="white" font-size="7" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">●</text>
+<circle cx="330" cy="195" r="10" fill="#3b82f6" opacity="0.9" stroke="white" stroke-width="1"/>
+<text x="330" y="199" fill="white" font-size="7" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">●</text>
+<circle cx="85" cy="470" r="10" fill="#f97316" opacity="0.9" stroke="white" stroke-width="1"/>
+<text x="85" y="474" fill="white" font-size="7" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">●</text>
+<circle cx="240" cy="445" r="10" fill="#3b82f6" opacity="0.9" stroke="white" stroke-width="1"/>
+<text x="240" y="449" fill="white" font-size="7" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">●</text>
+<circle cx="315" cy="445" r="10" fill="#ef4444" opacity="0.9" stroke="white" stroke-width="1"/>
+<text x="315" y="449" fill="white" font-size="7" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">●</text>
+<circle cx="180" cy="290" r="10" fill="#3b82f6" opacity="0.9" stroke="white" stroke-width="1"/>
+<text x="180" y="294" fill="white" font-size="7" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">●</text>
+<circle cx="200" cy="340" r="22" fill="#3b82f6" opacity="0.12"/>
+<circle cx="200" cy="340" r="12" fill="#3b82f6" opacity="0.3"/>
+<circle cx="200" cy="340" r="8" fill="#60a5fa" stroke="white" stroke-width="1.5"/>
+<rect x="20" y="510" width="360" height="160" fill="#1e293b" rx="16" stroke="#334155" stroke-width="0.5"/>
+<rect x="175" y="522" width="50" height="4" fill="#334155" rx="2"/>
+<text x="40" y="550" fill="#e2e8f0" font-size="16" font-family="'Segoe UI',Arial,sans-serif" text-anchor="start" font-weight="600">M0TGN-9</text>
+<text x="40" y="570" fill="#94a3b8" font-size="12" font-family="'Segoe UI',Arial,sans-serif" text-anchor="start" font-weight="normal">Ham APRS  ·  IO93gn</text>
+<rect x="40" y="582" width="100" height="38" fill="#162032" rx="8"/>
+<text x="90" y="597" fill="#94a3b8" font-size="9" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">Distance</text>
+<text x="90" y="612" fill="#4ade80" font-size="12" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="600">8.2 km</text>
+<rect x="148" y="582" width="100" height="38" fill="#162032" rx="8"/>
+<text x="198" y="597" fill="#94a3b8" font-size="9" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">Bearing</text>
+<text x="198" y="612" fill="#38bdf8" font-size="12" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="600">127°</text>
+<rect x="256" y="582" width="100" height="38" fill="#162032" rx="8"/>
+<text x="306" y="597" fill="#94a3b8" font-size="9" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">Last</text>
+<text x="306" y="612" fill="#94a3b8" font-size="12" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="600">4 min</text>
+<rect x="40" y="632" width="152" height="30" fill="#38bdf8" rx="8"/>
+<text x="116" y="652" fill="#0f172a" font-size="12" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="600">Message</text>
+<rect x="204" y="632" width="152" height="30" fill="#162032" rx="8" stroke="#334155" stroke-width="1"/>
+<text x="280" y="652" fill="#94a3b8" font-size="11" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">Add to Contacts</text>
+<rect x="20" y="694" width="360" height="66" fill="#0f172a" rx="0" opacity="0.97"/>
+<rect x="20" y="694" width="360" height="0.5" fill="#334155" rx="0"/>
+<rect x="20" y="694" width="360" height="66" fill="white" rx="0" opacity="0.04"/>
+<text x="56" y="720" fill="#38bdf8" font-size="18" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">🗺</text>
+<text x="56" y="738" fill="#38bdf8" font-size="9" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">Map</text>
+<text x="128" y="720" fill="#94a3b8" font-size="18" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">💬</text>
+<text x="128" y="738" fill="#94a3b8" font-size="9" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">Msgs</text>
+<text x="200" y="720" fill="#94a3b8" font-size="18" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">📻</text>
+<text x="200" y="738" fill="#94a3b8" font-size="9" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">Stns</text>
+<text x="272" y="720" fill="#94a3b8" font-size="18" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">📊</text>
+<text x="272" y="738" fill="#94a3b8" font-size="9" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">Status</text>
+<text x="344" y="720" fill="#94a3b8" font-size="18" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">⚙</text>
+<text x="344" y="738" fill="#94a3b8" font-size="9" font-family="'Segoe UI',Arial,sans-serif" text-anchor="middle" font-weight="normal">Settings</text>
+<rect x="170" y="756" width="60" height="4" fill="#334155" rx="2"/>
+</g>
+</svg>
