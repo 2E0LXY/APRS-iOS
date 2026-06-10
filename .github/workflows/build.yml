@@ -7,6 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
+  # ── Simulator build (always runs — no secrets needed) ────────────────────────
   build:
     runs-on: macos-latest
     steps:
@@ -30,7 +31,8 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build
 
-  release:
+  # ── Simulator release artifact (on tags) ─────────────────────────────────────
+  release-simulator:
     needs: build
     runs-on: macos-latest
     if: startsWith(github.ref, 'refs/tags/v')
@@ -45,7 +47,7 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate --spec project.yml
 
-      - name: Build and package
+      - name: Build and package simulator app
         run: |
           xcodebuild \
             -project APRSNet.xcodeproj \
@@ -63,11 +65,139 @@ jobs:
             zip -r APRSNet-iOS-Simulator.zip APRSNet.app
           fi
 
-      - name: Create Release
+      - name: Upload simulator build to release
         uses: softprops/action-gh-release@v2
         with:
           files: APRSNet-iOS-Simulator.zip
           body: |
-            ## APRS Net iOS
-            Simulator build. Sign with your Apple Developer certificate for device installation.
+            ## APRS Net iOS ${{ github.ref_name }}
+
+            **Simulator build** — for development/testing only.
+            Install on a real iPhone via TestFlight once Apple Developer signing is configured.
+
+            See [README](https://github.com/2E0LXY/APRS-iOS#build-from-source) for build instructions.
           generate_release_notes: true
+
+  # ── TestFlight / App Store upload (only when signing secrets are present) ─────
+  #
+  # Required GitHub repository secrets:
+  #   APPLE_CERTIFICATE          — base64-encoded Distribution .p12 file
+  #                                 openssl base64 -in Certificates.p12 | pbcopy
+  #   APPLE_CERTIFICATE_PASSWORD — password for the .p12
+  #   APPLE_PROVISIONING_PROFILE — base64-encoded App Store .mobileprovision
+  #                                 base64 -i APRSNet_AppStore.mobileprovision | pbcopy
+  #   APPLE_TEAM_ID              — 10-char team ID from developer.apple.com (e.g. ABC12345DE)
+  #   ASC_API_KEY_ID             — Key ID from App Store Connect → Users → Integrations
+  #   ASC_API_ISSUER_ID          — Issuer ID from same page
+  #   ASC_API_KEY_BASE64         — base64-encoded .p8 private key file
+  #                                 base64 -i AuthKey_XXXX.p8 | pbcopy
+  #
+  # One-time App Store Connect setup:
+  #   1. developer.apple.com → Certificates → create Distribution certificate
+  #   2. developer.apple.com → Identifiers → register uk.aprsnet.ios
+  #   3. developer.apple.com → Profiles → create App Store profile for uk.aprsnet.ios
+  #   4. appstoreconnect.apple.com → Apps → New App → bundle ID uk.aprsnet.ios
+  #   5. appstoreconnect.apple.com → Users → Integrations → create API key (Manager role)
+  # ─────────────────────────────────────────────────────────────────────────────
+  testflight:
+    needs: build
+    runs-on: macos-latest
+    if: |
+      startsWith(github.ref, 'refs/tags/v') &&
+      secrets.APPLE_CERTIFICATE != '' &&
+      secrets.APPLE_PROVISIONING_PROFILE != ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate --spec project.yml
+
+      - name: Set up keychain and import certificate
+        env:
+          CERTIFICATE_BASE64:    ${{ secrets.APPLE_CERTIFICATE }}
+          CERTIFICATE_PASSWORD:  ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD:     ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          # Create a temporary keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/aprs-signing.keychain-db
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security list-keychains -d user -s $KEYCHAIN_PATH
+
+          # Import distribution certificate
+          echo "$CERTIFICATE_BASE64" | base64 --decode -o $RUNNER_TEMP/certificate.p12
+          security import $RUNNER_TEMP/certificate.p12 \
+            -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 \
+            -k $KEYCHAIN_PATH
+          security set-key-partition-list -S apple-tool:,apple: \
+            -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+      - name: Install provisioning profile
+        env:
+          PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
+        run: |
+          PP_PATH=$RUNNER_TEMP/APRSNet_AppStore.mobileprovision
+          echo "$PROFILE_BASE64" | base64 --decode -o $PP_PATH
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          UUID=$(security cms -D -i $PP_PATH | plutil -extract UUID raw -)
+          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/$UUID.mobileprovision
+
+      - name: Update project.yml for App Store signing
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          # Patch project.yml to enable proper signing for archive
+          sed -i '' \
+            -e "s/CODE_SIGN_STYLE: Manual/CODE_SIGN_STYLE: Manual/" \
+            -e "s/CODE_SIGN_IDENTITY: ""/CODE_SIGN_IDENTITY: Apple Distribution/" \
+            -e "s/CODE_SIGNING_REQUIRED: "NO"/CODE_SIGNING_REQUIRED: "YES"/" \
+            -e "s/CODE_SIGNING_ALLOWED: "NO"/CODE_SIGNING_ALLOWED: "YES"/" \
+            project.yml
+          # Append team and profile settings
+          cat >> project.yml << EOF
+          DEVELOPMENT_TEAM: $APPLE_TEAM_ID
+          PROVISIONING_PROFILE_SPECIFIER: APRSNet_AppStore
+EOF
+          xcodegen generate --spec project.yml
+
+      - name: Archive
+        run: |
+          xcodebuild archive \
+            -project APRSNet.xcodeproj \
+            -scheme APRSNet \
+            -configuration Release \
+            -archivePath $RUNNER_TEMP/APRSNet.xcarchive \
+            -destination "generic/platform=iOS"
+
+      - name: Export IPA (upload to App Store Connect)
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          # Substitute team ID in export options
+          sed "s/\$(APPLE_TEAM_ID)/$APPLE_TEAM_ID/" ExportOptions.plist > /tmp/ExportOptions.plist
+          xcodebuild -exportArchive \
+            -archivePath $RUNNER_TEMP/APRSNet.xcarchive \
+            -exportOptionsPlist /tmp/ExportOptions.plist \
+            -exportPath $RUNNER_TEMP/export
+
+      - name: Upload to TestFlight via App Store Connect API
+        env:
+          ASC_API_KEY_ID:     ${{ secrets.ASC_API_KEY_ID }}
+          ASC_API_ISSUER_ID:  ${{ secrets.ASC_API_ISSUER_ID }}
+          ASC_API_KEY_BASE64: ${{ secrets.ASC_API_KEY_BASE64 }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$ASC_API_KEY_BASE64" | base64 --decode \
+            -o ~/.appstoreconnect/private_keys/AuthKey_${ASC_API_KEY_ID}.p8
+
+          xcrun altool --upload-app \
+            --type ios \
+            --file $(find $RUNNER_TEMP/export -name "*.ipa" | head -1) \
+            --apiKey "$ASC_API_KEY_ID" \
+            --apiIssuer "$ASC_API_ISSUER_ID" \
+            --show-progress
+          echo "✅ Uploaded to TestFlight — check App Store Connect for processing status"
