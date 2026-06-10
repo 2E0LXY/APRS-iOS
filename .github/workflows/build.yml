@@ -7,18 +7,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  # ── Simulator build (always runs) ─────────────────────────────────────────────
   build:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Install xcodegen
         run: brew install xcodegen
-
       - name: Generate Xcode project
         run: xcodegen generate --spec project.yml
-
       - name: Build for iOS Simulator
         run: |
           xcodebuild \
@@ -31,7 +27,6 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build
 
-  # ── Simulator release artifact (on tags) ──────────────────────────────────────
   release-simulator:
     needs: build
     runs-on: macos-latest
@@ -40,14 +35,11 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-
       - name: Install xcodegen
         run: brew install xcodegen
-
       - name: Generate Xcode project
         run: xcodegen generate --spec project.yml
-
-      - name: Build and package simulator app
+      - name: Build and package
         run: |
           xcodebuild \
             -project APRSNet.xcodeproj \
@@ -64,107 +56,76 @@ jobs:
             cp -r "$APP" APRSNet.app
             zip -r APRSNet-iOS-Simulator.zip APRSNet.app
           fi
-
-      - name: Upload simulator build to release
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: APRSNet-iOS-Simulator.zip
           body: |
             ## APRS Net iOS ${{ github.ref_name }}
-
-            **Simulator build** — for development/testing only.
-            Install on a real iPhone via TestFlight once signing is configured.
-            See [DISTRIBUTION.md](https://github.com/2E0LXY/APRS-iOS/blob/main/DISTRIBUTION.md).
+            Simulator build. See [DISTRIBUTION.md](https://github.com/2E0LXY/APRS-iOS/blob/main/DISTRIBUTION.md) for TestFlight setup.
           generate_release_notes: true
 
-  # ── TestFlight upload (only runs when APPLE_CERTIFICATE secret is set) ─────────
-  #
-  # Activate by adding these secrets to the repository:
-  #   APPLE_CERTIFICATE          - base64 .p12  (openssl base64 -in cert.p12)
-  #   APPLE_CERTIFICATE_PASSWORD - .p12 password
-  #   APPLE_PROVISIONING_PROFILE - base64 .mobileprovision
-  #   APPLE_TEAM_ID              - 10-char team ID (e.g. ABC12345DE)
-  #   ASC_API_KEY_ID             - App Store Connect API key ID
-  #   ASC_API_ISSUER_ID          - App Store Connect issuer ID
-  #   ASC_API_KEY_BASE64         - base64 .p8 private key
-  # See DISTRIBUTION.md for full instructions.
   testflight:
     needs: build
     runs-on: macos-latest
     if: startsWith(github.ref, 'refs/tags/v')
-    environment: testflight
     steps:
       - uses: actions/checkout@v4
-
-      - name: Check signing secrets
-        id: check-secrets
+      - name: Check for signing secrets
+        id: secrets
         env:
-          HAS_CERT: ${{ secrets.APPLE_CERTIFICATE != '' }}
+          CERT: ${{ secrets.APPLE_CERTIFICATE }}
         run: |
-          if [ "$HAS_CERT" != "true" ]; then
-            echo "APPLE_CERTIFICATE secret not set — skipping TestFlight upload"
-            echo "skip=true" >> $GITHUB_OUTPUT
+          if [ -z "$CERT" ]; then
+            echo "No APPLE_CERTIFICATE secret — skipping TestFlight upload"
+            echo "enabled=false" >> $GITHUB_OUTPUT
           else
-            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "enabled=true" >> $GITHUB_OUTPUT
           fi
-
       - name: Install xcodegen
-        if: steps.check-secrets.outputs.skip == 'false'
+        if: steps.secrets.outputs.enabled == 'true'
         run: brew install xcodegen
-
       - name: Generate Xcode project
-        if: steps.check-secrets.outputs.skip == 'false'
+        if: steps.secrets.outputs.enabled == 'true'
         run: xcodegen generate --spec project.yml
-
-      - name: Import Distribution Certificate
-        if: steps.check-secrets.outputs.skip == 'false'
+      - name: Import certificate
+        if: steps.secrets.outputs.enabled == 'true'
         env:
-          CERTIFICATE_BASE64:   ${{ secrets.APPLE_CERTIFICATE }}
-          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          CERT_B64: ${{ secrets.APPLE_CERTIFICATE }}
+          CERT_PASS: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
         run: |
-          KEYCHAIN_PATH=$RUNNER_TEMP/aprs.keychain-db
-          security create-keychain -p "$CERTIFICATE_PASSWORD" $KEYCHAIN_PATH
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-          security unlock-keychain -p "$CERTIFICATE_PASSWORD" $KEYCHAIN_PATH
-          security list-keychains -d user -s $KEYCHAIN_PATH
-          echo "$CERTIFICATE_BASE64" | base64 --decode -o $RUNNER_TEMP/cert.p12
-          security import $RUNNER_TEMP/cert.p12 -P "$CERTIFICATE_PASSWORD" \
-            -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          security set-key-partition-list -S apple-tool:,apple: \
-            -s -k "$CERTIFICATE_PASSWORD" $KEYCHAIN_PATH
-
-      - name: Install Provisioning Profile
-        if: steps.check-secrets.outputs.skip == 'false'
+          KP=$RUNNER_TEMP/aprs.keychain-db
+          security create-keychain -p "$CERT_PASS" $KP
+          security set-keychain-settings -lut 21600 $KP
+          security unlock-keychain -p "$CERT_PASS" $KP
+          security list-keychains -d user -s $KP
+          echo "$CERT_B64" | base64 --decode -o $RUNNER_TEMP/cert.p12
+          security import $RUNNER_TEMP/cert.p12 -P "$CERT_PASS" -A -t cert -f pkcs12 -k $KP
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$CERT_PASS" $KP
+      - name: Install provisioning profile
+        if: steps.secrets.outputs.enabled == 'true'
         env:
-          PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
+          PP_B64: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
         run: |
-          PP=$RUNNER_TEMP/APRSNet_AppStore.mobileprovision
-          echo "$PROFILE_BASE64" | base64 --decode -o $PP
+          PP=$RUNNER_TEMP/profile.mobileprovision
+          echo "$PP_B64" | base64 --decode -o $PP
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           UUID=$(security cms -D -i $PP | plutil -extract UUID raw -)
           cp $PP ~/Library/MobileDevice/Provisioning\ Profiles/$UUID.mobileprovision
-
-      - name: Patch project.yml for App Store signing
-        if: steps.check-secrets.outputs.skip == 'false'
+      - name: Patch signing settings
+        if: steps.secrets.outputs.enabled == 'true'
         env:
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          python3 << 'PY'
-          import re, os
-          with open("project.yml") as f: s = f.read()
-          s = s.replace('CODE_SIGN_IDENTITY: ""', 'CODE_SIGN_IDENTITY: "Apple Distribution"')
-          s = s.replace('CODE_SIGNING_REQUIRED: "NO"', 'CODE_SIGNING_REQUIRED: "YES"')
-          s = s.replace('CODE_SIGNING_ALLOWED: "NO"', 'CODE_SIGNING_ALLOWED: "YES"')
-          team = os.environ["APPLE_TEAM_ID"]
-          s = s.replace('IPHONEOS_DEPLOYMENT_TARGET: "17.0"',
-            f'IPHONEOS_DEPLOYMENT_TARGET: "17.0"
-        DEVELOPMENT_TEAM: {team}')
-          with open("project.yml","w") as f: f.write(s)
-          PY
+          sed -i '' \
+            -e 's/CODE_SIGN_IDENTITY: ""/CODE_SIGN_IDENTITY: "Apple Distribution"/' \
+            -e 's/CODE_SIGNING_REQUIRED: "NO"/CODE_SIGNING_REQUIRED: "YES"/' \
+            -e 's/CODE_SIGNING_ALLOWED: "NO"/CODE_SIGNING_ALLOWED: "YES"/' \
+            project.yml
+          echo "        DEVELOPMENT_TEAM: $TEAM_ID" >> project.yml
           xcodegen generate --spec project.yml
-
       - name: Archive
-        if: steps.check-secrets.outputs.skip == 'false'
+        if: steps.secrets.outputs.enabled == 'true'
         run: |
           xcodebuild archive \
             -project APRSNet.xcodeproj \
@@ -172,32 +133,25 @@ jobs:
             -configuration Release \
             -archivePath $RUNNER_TEMP/APRSNet.xcarchive \
             -destination "generic/platform=iOS"
-
       - name: Export IPA
-        if: steps.check-secrets.outputs.skip == 'false'
+        if: steps.secrets.outputs.enabled == 'true'
         env:
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          sed "s/\$(APPLE_TEAM_ID)/$APPLE_TEAM_ID/" ExportOptions.plist > /tmp/ExportOptions.plist
+          sed "s/\$(APPLE_TEAM_ID)/$TEAM_ID/" ExportOptions.plist > /tmp/ExportOptions.plist
           xcodebuild -exportArchive \
             -archivePath $RUNNER_TEMP/APRSNet.xcarchive \
             -exportOptionsPlist /tmp/ExportOptions.plist \
             -exportPath $RUNNER_TEMP/export
-
       - name: Upload to TestFlight
-        if: steps.check-secrets.outputs.skip == 'false'
+        if: steps.secrets.outputs.enabled == 'true'
         env:
-          ASC_API_KEY_ID:     ${{ secrets.ASC_API_KEY_ID }}
-          ASC_API_ISSUER_ID:  ${{ secrets.ASC_API_ISSUER_ID }}
-          ASC_API_KEY_BASE64: ${{ secrets.ASC_API_KEY_BASE64 }}
+          KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_API_ISSUER_ID }}
+          KEY_B64: ${{ secrets.ASC_API_KEY_BASE64 }}
         run: |
           mkdir -p ~/.appstoreconnect/private_keys
-          echo "$ASC_API_KEY_BASE64" | base64 --decode \
-            -o ~/.appstoreconnect/private_keys/AuthKey_${ASC_API_KEY_ID}.p8
+          echo "$KEY_B64" | base64 --decode -o ~/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8
           IPA=$(find $RUNNER_TEMP/export -name "*.ipa" | head -1)
-          xcrun altool --upload-app \
-            --type ios --file "$IPA" \
-            --apiKey "$ASC_API_KEY_ID" \
-            --apiIssuer "$ASC_API_ISSUER_ID" \
-            --show-progress
-          echo "Uploaded to TestFlight successfully"
+          xcrun altool --upload-app --type ios --file "$IPA" \
+            --apiKey "$KEY_ID" --apiIssuer "$ISSUER" --show-progress
