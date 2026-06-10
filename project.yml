@@ -27,6 +27,7 @@ targets:
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Location is used for GPS position beaconing and finding nearby APRS stations."
         INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription: "Background location allows continuous APRS beaconing."
         INFOPLIST_KEY_UIBackgroundModes: "location fetch"
+        INFOPLIST_KEY_NSUserNotificationsUsageDescription: "Notifications are used for geo-fence alerts and incoming APRS messages."
 schemes:
   APRSNet:
     build:
