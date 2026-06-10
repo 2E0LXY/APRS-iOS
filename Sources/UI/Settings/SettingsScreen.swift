@@ -180,14 +180,20 @@ struct NotificationsSection: View {
 struct GeoFenceAlertsSection: View {
     let vm: AprsViewModel
     var body: some View {
-        if vm.settings.memberSignedIn {
-            Section {
+        Section {
+            if vm.settings.memberSignedIn {
                 NavigationLink(destination: GeoFenceScreen()) {
                     Label("Geo-fence Alerts", systemImage: "location.circle.fill")
                 }
-            } footer: {
-                Text("Get notified when a station enters or leaves a geographic area.")
+            } else {
+                NavigationLink(destination: GeoFenceScreen()) {
+                    Label("Geo-fence Alerts", systemImage: "location.circle.fill")
+                }
+                Text("Sign in to your aprsnet.uk account above to create alerts.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
+        } footer: {
+            Text("Get notified when a station enters or leaves a geographic area.")
         }
     }
 }
