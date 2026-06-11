@@ -13,6 +13,8 @@ final class AprsViewModel {
     var filterTick  = 0
     var alertRules: [AlertRule] = []
     var serverStatus: ServerStatus?
+    /// Timestamp of last server message/prefs sync (Unix seconds). Rate-limits reconnect syncs.
+    var _lastMsgSync: Double = 0
 
     let settings   = SettingsStore()
     let ws         = AprsWebSocket()
@@ -39,9 +41,31 @@ final class AprsViewModel {
         locMgr.desiredAccuracy = kCLLocationAccuracyBest
 
         ws.onStateChange = { [weak self] state in self?.connState = state }
-        ws.onPosition = { [weak self] json in self?.handlePositionJson(json) }
-        ws.onAlert    = { [weak self] type, call, msg in self?.handleWsAlert(type, call, msg) }
-        ws.onPacket   = { [weak self] raw  in self?.handleRawPacket(raw)   }
+        ws.onPosition    = { [weak self] json in self?.handlePositionJson(json) }
+        ws.onAlert       = { [weak self] type, call, msg in self?.handleWsAlert(type, call, msg) }
+        ws.onPacket      = { [weak self] raw  in self?.handleRawPacket(raw) }
+
+        // Apply server-side preferences pushed from another device
+        ws.onMemberSync = { [weak self] prefs in
+            guard let self else { return }
+            Task { await self.applyServerPrefs(prefs) }
+        }
+
+        // Sync message history from server each time WS re-authenticates.
+        // Rate-limited: will not sync more than once every 5 minutes.
+        ws.onAuthed = { [weak self] in
+            guard let self else { return }
+            let token = self.settings.memberToken
+            guard !token.isEmpty else { return }
+            let now = Date().timeIntervalSince1970
+            // _lastMsgSync is declared below; 0 means "never synced"
+            if now - self._lastMsgSync < 300 { return }
+            self._lastMsgSync = now
+            Task {
+                await self.syncPreferencesFromServer(token: token)
+                await self.syncMessagesFromServer(token: token)
+            }
+        }
     }
 
     func start() {
