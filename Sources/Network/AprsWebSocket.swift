@@ -5,10 +5,14 @@ final class AprsWebSocket: NSObject {
     enum ConnState { case disconnected, connecting, connected, authed }
 
     /// Called on main thread whenever connection state changes.
-    var onStateChange: ((ConnState) -> Void)?
-    var onAlert:       ((String, String, String) -> Void)?
-    var onPosition:    ((String) -> Void)?
-    var onPacket:      ((String) -> Void)?
+    var onStateChange:  ((ConnState) -> Void)?
+    var onAlert:        ((String, String, String) -> Void)?
+    var onPosition:     ((String) -> Void)?
+    var onPacket:       ((String) -> Void)?
+    /// Called each time authentication succeeds (login + reconnect).
+    var onAuthed:       (() -> Void)?
+    /// Called when the server pushes a member_sync event ([String:Any] prefs dict).
+    var onMemberSync:   (([String: Any]) -> Void)?
 
     private var session:   URLSession!
     private var task:      URLSessionWebSocketTask?
@@ -93,6 +97,7 @@ final class AprsWebSocket: NSObject {
         case "auth_ack", "authok", "logresp":
             if (json["status"] as? String) != "error" {
                 notify(.authed)
+                DispatchQueue.main.async { self.onAuthed?() }
             }
         case "alert":
             let alertType = json["alert_type"] as? String ?? ""
@@ -104,6 +109,10 @@ final class AprsWebSocket: NSObject {
             if let dataObj = json["data"],
                let bytes = try? JSONSerialization.data(withJSONObject: dataObj),
                let str   = String(data: bytes, encoding: .utf8) { onPosition?(str) }
+        case "member_sync":
+            if let prefs = json["data"] as? [String: Any] {
+                DispatchQueue.main.async { self.onMemberSync?(prefs) }
+            }
         default: break
         }
     }
