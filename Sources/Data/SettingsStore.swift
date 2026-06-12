@@ -61,6 +61,14 @@ class SettingsStore {
         get { bool("drop_pistar", default: false) }
         set { d.set(newValue, forKey: "drop_pistar") }
     }
+    var dropDstar: Bool {
+        get { bool("drop_dstar", default: false) }
+        set { d.set(newValue, forKey: "drop_dstar") }
+    }
+    var dropApdesk: Bool {
+        get { bool("drop_apdesk", default: false) }
+        set { d.set(newValue, forKey: "drop_apdesk") }
+    }
 
     // AIS direct
     var aisApiKey: String {
